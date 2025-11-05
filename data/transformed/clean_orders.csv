@@ -1,0 +1,4 @@
+order_id,order_date,product_id,qty,unit_price,user_id,order_status,product_name,category,price,warehouse_id,stock_on_hand,total_price
+50001,2025-10-25,1001,2,19.99,9001,completed,Classic Tee,Apparel,19.99,W1,120,39.98
+50002,2025-10-25,1003,1,9.5,9002,completed,Coffee Mug,Home,9.5,W1,300,9.5
+50004,2025-10-26,1002,1,79.99,9004,completed,Running Shoes,Footwear,79.99,W2,40,79.99

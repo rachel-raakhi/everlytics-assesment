@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      # We only initialize one DB here, but we’ll create the second in init.sql
+      POSTGRES_DB: airflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+      # This script will create 'quickshop_db' automatically
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  webserver:
+    build: .
+    container_name: airflow-webserver
+    depends_on:
+      - postgres
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__WEBSERVER__SECRET_KEY=my_super_secret_key_123
+      - AIRFLOW_CONN_POSTGRES_QUICKSHOP=postgresql://airflow:airflow@postgres:5432/quickshop_db
+      - QUICKSHOP_DB_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/quickshop_db
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./data:/opt/airflow/data
+      - ./sql:/opt/airflow/sql
+      - ./dags/quickshop_etl:/opt/airflow/quickshop_etl
+      - ./reports:/opt/airflow/reports
+
+
+    ports:
+      - "8080:8080"
+    command: webserver
+
+  scheduler:
+    build: .
+    container_name: airflow-scheduler
+    depends_on:
+      - webserver
+      - postgres
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW_CONN_POSTGRES_QUICKSHOP=postgresql://airflow:airflow@postgres:5432/quickshop_db
+      - QUICKSHOP_DB_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/quickshop_db
+      - AIRFLOW__WEBSERVER__SECRET_KEY=my_super_secret_key_123
+    
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./data:/opt/airflow/data
+      - ./sql:/opt/airflow/sql
+      - ./dags/quickshop_etl:/opt/airflow/quickshop_etl
+      - ./reports:/opt/airflow/reports
+
+
+    command: scheduler
+
+volumes:
+  postgres-db-volume:
